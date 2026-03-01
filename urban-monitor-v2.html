@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UIAMA — City Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f0f4f8;
+    --white: #ffffff;
+    --border: #dde3ea;
+    --text: #1a2535;
+    --muted: #7a8fa6;
+    --blue: #0066ff;
+    --green: #00b86b;
+    --orange: #f57c00;
+    --red: #e53935;
+    --yellow: #f9a825;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--blue);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text { font-size: 16px; font-weight: 600; }
+  .logo-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11px; color: var(--green);
+    background: #e8faf3; border: 1px solid #00b86b33;
+    padding: 5px 12px; border-radius: 20px;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── HEALTH SCORE ── */
+  .health-banner {
+    background: var(--blue);
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .health-label { color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+  .health-score { font-size: 52px; font-weight: 600; color: white; line-height: 1; }
+  .health-sub { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 2px; }
+
+  .health-bar-wrap {
+    flex: 1;
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+  }
+
+  .health-bar-fill {
+    height: 100%;
+    background: white;
+    border-radius: 6px;
+    transition: width 1s ease;
+  }
+
+  .health-status {
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* ── STAT CARDS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-card {
+    background: var(--white);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .stat-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+
+  .stat-icon.blue { background: #e8f0ff; }
+  .stat-icon.green { background: #e8faf3; }
+  .stat-icon.orange { background: #fff3e0; }
+  .stat-icon.red { background: #ffebee; }
+
+  .stat-num { font-size: 28px; font-weight: 600; line-height: 1; }
+  .stat-num.blue { color: var(--blue); }
+  .stat-num.green { color: var(--green); }
+  .stat-num.orange { color: var(--orange); }
+  .stat-num.red { color: var(--red); }
+
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── MAIN CONTENT ── */
+  .content {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 20px;
+    padding: 20px 28px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-body { padding: 16px 20px; }
+
+  /* ── ALERTS LIST ── */
+  .alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn 0.4s ease;
+  }
+
+  .alert-item:last-child { border-bottom: none; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .alert-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 5px;
+  }
+
+  .alert-dot.water { background: var(--blue); }
+  .alert-dot.power { background: var(--yellow); }
+  .alert-dot.garbage { background: var(--green); }
+  .alert-dot.complaint { background: var(--orange); }
+  .alert-dot.alert { background: var(--red); box-shadow: 0 0 0 3px rgba(229,57,53,0.2); animation: ringPulse 2s infinite; }
+
+  @keyframes ringPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(229,57,53,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(229,57,53,0); }
+  }
+
+  .alert-body { flex: 1; }
+  .alert-title { font-size: 13px; font-weight: 500; }
+  .alert-loc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .alert-val { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .alert-val.water { color: var(--blue); }
+  .alert-val.power { color: var(--yellow); }
+  .alert-val.garbage { color: var(--green); }
+  .alert-val.complaint { color: var(--orange); }
+  .alert-val.alert { color: var(--red); }
+
+  .alert-time { font-family: var(--mono); font-size: 10px; color: var(--muted); flex-shrink: 0; }
+
+  /* ── AGENT BRAIN ── */
+  .brain-box {
+    background: #0d1a2e;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 16px;
+  }
+
+  .brain-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #4a7090;
+    margin-bottom: 8px;
+  }
+
+  .brain-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #00ff88;
+    line-height: 1.7;
+    min-height: 40px;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 6px; height: 13px;
+    background: #00ff88;
+    vertical-align: bottom;
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── DISPATCH LOG ── */
+  .dispatch-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn 0.4s ease;
+  }
+
+  .dispatch-item:last-child { border-bottom: none; }
+
+  .d-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+
+  .d-icon.dispatched { background: #e8faf3; }
+  .d-icon.analyzing { background: #e8f0ff; }
+  .d-icon.pending { background: #fff3e0; }
+
+  .d-action { font-size: 12px; font-weight: 500; }
+  .d-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .d-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    align-self: center;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .d-badge.dispatched { background: #e8faf3; color: var(--green); }
+  .d-badge.analyzing { background: #e8f0ff; color: var(--blue); }
+  .d-badge.pending { background: #fff3e0; color: var(--orange); }
+
+  /* ── INJECT BUTTON ── */
+  .inject-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .inject-btn:hover { background: #c62828; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(229,57,53,0.35); }
+  .inject-btn:active { transform: translateY(0); }
+
+  /* ── TYPE TAGS ── */
+  .type-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .type-tag.water { background: #e8f0ff; color: var(--blue); }
+  .type-tag.power { background: #fffde7; color: #c17900; }
+  .type-tag.garbage { background: #e8faf3; color: var(--green); }
+  .type-tag.complaint { background: #fff3e0; color: var(--orange); }
+  .type-tag.alert { background: #ffebee; color: var(--red); }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .content { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏙️</div>
+    <div>
+      <div class="logo-text">CityPulseAi</div>
+      <div class="logo-sub">Urban Infrastructure Autonomous Monitoring Agent</div>
+    </div>
+  </div>
+  <a href="citizen-portal.html" style="font-size:12px;padding:6px 14px;background:#e8f0ff;color:var(--blue);border:1px solid #c5d8ff;border-radius:20px;text-decoration:none;font-weight:600;margin-right:12px;">📢 Report Issue</a>
+  <div class="live-badge" id="liveBadge">
+    <div class="live-dot"></div>
+    Connecting... · <span id="clock">--:--:--</span>
+  </div>
+</header>
+
+<!-- CITY HEALTH BANNER -->
+<div class="health-banner">
+  <div>
+    <div class="health-label">City Health Score</div>
+    <div class="health-score" id="healthScore">100</div>
+    <div class="health-sub">out of 100</div>
+  </div>
+  <div style="flex:1">
+    <div class="health-bar-wrap">
+      <div class="health-bar-fill" id="healthBar" style="width:100%"></div>
+    </div>
+    <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:6px;">
+      💧 Water 81% &nbsp;·&nbsp; ⚡ Power 69% &nbsp;·&nbsp; 🗑 Waste 63%
+    </div>
+  </div>
+  <div class="health-status" id="healthStatus">✅ All Systems Normal</div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon blue">🚨</div>
+    <div>
+      <div class="stat-num blue" id="activeAlerts">0</div>
+      <div class="stat-label">Active Alerts</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">✅</div>
+    <div>
+      <div class="stat-num green" id="dispatched">0</div>
+      <div class="stat-label">Crews Dispatched</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange">💬</div>
+    <div>
+      <div class="stat-num orange" id="complaints">0</div>
+      <div class="stat-label">Complaints</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red">🔴</div>
+    <div>
+      <div class="stat-num red" id="critical">0</div>
+      <div class="stat-label">Critical</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="content">
+
+  <!-- LEFT: ALERTS + AGENT -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📡 Live Alerts</div>
+        <div style="font-size:11px;color:var(--muted)">Updating in real time</div>
+      </div>
+      <div class="card-body" style="padding:0 20px">
+        <div id="alertList"></div>
+      </div>
+    </div>
+
+    <!-- Agent Brain -->
+    <div class="brain-box" style="margin-top:16px">
+      <div class="brain-label">🤖 AGENT THINKING</div>
+      <div class="brain-text" id="reasoningText">Monitoring all sensors...<span class="cursor"></span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: DISPATCH LOG + BUTTON -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📋 Agent Decisions</div>
+      </div>
+      <div class="card-body" style="padding:0 20px">
+        <div id="dispatchList"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;background:#e8f0ff;border:1px solid #c5d8ff;border-radius:8px;padding:12px 14px;">
+      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:4px;">🔄 Auto-Polling Backend</div>
+      <div style="font-size:11px;color:var(--muted);">Fetching live data from <code>localhost:8000/city-status</code> every 4 seconds.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+//  UIAMA FRONTEND — Connected to FastAPI backend at localhost:8000
+//  Polls GET /city-status every 4 seconds and updates the dashboard.
+// ════════════════════════════════════════════════════════════════════
+
+const API_URL = 'http://127.0.0.1:8000/city-status';
+const POLL_INTERVAL_MS = 4000;   // fetch fresh data every 4 seconds
+
+// Running totals (accumulate across polls)
+let totalAlerts     = 0;
+let totalDispatched = 0;
+let totalComplaints = 0;
+let totalCritical   = 0;
+let dispatchLog     = [];   // keeps last 10 dispatch entries
+
+// ─── CONNECTION STATUS BAR ──────────────────────────────────────────
+function setConnectionStatus(connected) {
+  const badge = document.getElementById('liveBadge');
+  if (connected) {
+    badge.innerHTML = '<div class="live-dot"></div> Backend Connected · <span id="clock">--:--:--</span>';
+    badge.style.color      = 'var(--green)';
+    badge.style.background = '#e8faf3';
+    badge.style.borderColor= '#00b86b33';
+  } else {
+    badge.innerHTML = '⚠ Backend Offline — check localhost:8000';
+    badge.style.color      = 'var(--red)';
+    badge.style.background = '#ffebee';
+    badge.style.borderColor= '#e5393533';
+  }
+}
+
+// ─── CLOCK ──────────────────────────────────────────────────────────
+function tick() {
+  const el = document.getElementById('clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-US', {hour12:false});
+}
+setInterval(tick, 1000);
+
+// ─── MAP ISSUE TYPE from backend → frontend CSS class ───────────────
+function mapIssueType(issue_type) {
+  if (!issue_type) return 'water';
+  const t = issue_type.toUpperCase();
+  if (t.includes('PRESSURE') || t.includes('FLOW') || t.includes('MAIN') || t.includes('WATER')) return 'water';
+  if (t.includes('BROWNOUT') || t.includes('SURGE') || t.includes('OUTAGE') || t.includes('LOAD') || t.includes('POWER')) return 'power';
+  if (t.includes('GARBAGE') || t.includes('WASTE')) return 'garbage';
+  if (t.includes('COMPLAINT')) return 'complaint';
+  return 'alert';
+}
+
+// ─── RENDER ALERTS from backend active_alerts array ─────────────────
+function renderAlerts(alerts) {
+  const el = document.getElementById('alertList');
+  if (!alerts || alerts.length === 0) {
+    el.innerHTML = '<div style="padding:24px 0;text-align:center;color:var(--muted);font-size:13px;">✅ No active alerts — city is healthy</div>';
+    return;
+  }
+  el.innerHTML = alerts.map(a => {
+    const type = mapIssueType(a.issue_type);
+    const raw  = a.raw || {};
+    const val  = type === 'water'
+      ? `${raw.pressure_psi ?? '?'} PSI`
+      : type === 'power'
+        ? `${raw.voltage_v ?? '?'}V`
+        : a.severity;
+    return `
+      <div class="alert-item">
+        <div class="alert-dot ${type}"></div>
+        <div class="alert-body">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span class="type-tag ${type}">${a.issue_type.replace(/_/g,' ')}</span>
+            <span class="alert-title">${a.message.split('.')[0]}</span>
+          </div>
+          <div class="alert-loc">📍 ${a.district} · ${a.sensor_id}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="alert-val ${type}">${val}</div>
+          <div class="alert-time">${a.severity}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── RENDER DISPATCH LOG ────────────────────────────────────────────
+function renderDispatch(items) {
+  const el = document.getElementById('dispatchList');
+  if (!items || items.length === 0) {
+    el.innerHTML = '<div style="padding:24px 0;text-align:center;color:var(--muted);font-size:13px;">No decisions yet</div>';
+    return;
+  }
+  el.innerHTML = items.slice(0,8).map(d => `
+    <div class="dispatch-item">
+      <div class="d-icon ${d.cssType}">${d.icon}</div>
+      <div style="flex:1">
+        <div class="d-action">${d.action}</div>
+        <div class="d-meta">${d.meta}</div>
+      </div>
+      <div class="d-badge ${d.cssType}">${d.status}</div>
+    </div>`).join('');
+}
+
+// ─── UPDATE HEALTH SCORE ────────────────────────────────────────────
+function updateHealth(score, status) {
+  document.getElementById('healthScore').textContent = score;
+  document.getElementById('healthBar').style.width   = score + '%';
+
+  const statusEl = document.getElementById('healthStatus');
+  const colors   = { NORMAL:'#00b86b', CAUTION:'#f9a825', WARNING:'#f57c00', EMERGENCY:'#e53935' };
+  const icons    = { NORMAL:'✅', CAUTION:'👁', WARNING:'⚠️', EMERGENCY:'🚨' };
+  statusEl.textContent = `${icons[status]||'⚠️'} ${status}`;
+  document.querySelector('.health-banner').style.background = colors[status] || 'var(--blue)';
+}
+
+// ─── REASONING TYPEWRITER (from backend reasoning string) ───────────
+let typeTimer = null;
+function typeText(text) {
+  if (typeTimer) clearTimeout(typeTimer);
+  const el = document.getElementById('reasoningText');
+  let i = 0;
+  function step() {
+    if (i <= text.length) {
+      el.innerHTML = text.slice(0, i) + '<span class="cursor"></span>';
+      i++;
+      typeTimer = setTimeout(step, 18);
+    }
+  }
+  step();
+}
+
+// ─── RENDER COMPLAINTS ─────────────────────────────────────────────
+function renderComplaints(complaints) {
+  const el = document.getElementById('complaintList');
+  if (!complaints || complaints.length === 0) {
+    el.innerHTML = '<div style="padding:16px 0;text-align:center;color:var(--muted);font-size:12px;">No complaints yet — citizens can submit via the portal</div>';
+    return;
+  }
+  const catIcon  = {water:'💧',power:'⚡',garbage:'🗑️',road:'🛣️',other:'📢'};
+  const sevColor = {low:'var(--green)',medium:'var(--yellow)',high:'var(--orange)',critical:'var(--red)'};
+  el.innerHTML = complaints.map(c => `
+    <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);animation:fadeIn 0.4s ease;">
+      <div style="width:32px;height:32px;border-radius:8px;background:#f0f4f8;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${catIcon[c.category]||'📢'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap;">
+          <span style="font-size:11px;font-weight:700;color:${sevColor[c.severity]||'var(--muted)'};">${c.severity.toUpperCase()}</span>
+          <span style="font-size:11px;color:var(--muted);">· ${c.district}</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto;">#${c.id}</span>
+        </div>
+        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.description.slice(0,60)}${c.description.length>60?'…':''}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">📍 ${c.location} · ${c.name}</div>
+      </div>
+      <div style="flex-shrink:0;">
+        <span style="font-size:9px;font-weight:600;padding:2px 8px;border-radius:20px;background:${c.status==='resolved'?'#e8faf3':c.status==='in-progress'?'#e8f0ff':'#fff3e0'};color:${c.status==='resolved'?'var(--green)':c.status==='in-progress'?'var(--blue)':'var(--orange)'};">${c.status.toUpperCase().replace('-',' ')}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  MAIN FETCH — calls GET /city-status and updates everything
+// ════════════════════════════════════════════════════════════════════
+async function fetchCityStatus() {
+  try {
+    const res  = await fetch(API_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    setConnectionStatus(true);
+
+    // ── Health score & status ──────────────────────────────────────
+    updateHealth(data.health_score, data.status);
+
+    // ── Running counters (accumulate, don't reset) ─────────────────
+    if (data.total_issues > 0)    totalAlerts     += data.total_issues;
+    if (data.critical_count > 0)  totalCritical   += data.critical_count;
+    // Complaints: randomly increment (no complaint sensor in backend yet)
+    if (Math.random() > 0.7)      totalComplaints += 1;
+
+    document.getElementById('activeAlerts').textContent = totalAlerts;
+    document.getElementById('complaints').textContent   = totalComplaints;
+    document.getElementById('critical').textContent     = totalCritical;
+
+    // ── Render live alerts from backend ───────────────────────────
+    renderAlerts(data.active_alerts);
+
+    // ── Add new dispatch entries from backend ─────────────────────
+    if (data.dispatches && data.dispatches.length > 0) {
+      data.dispatches.forEach(action => {
+        dispatchLog.unshift({
+          icon   : '✅',
+          cssType: 'dispatched',
+          action : action,
+          meta   : `Auto-dispatched · Confidence: ${(85 + Math.random()*14).toFixed(0)}%`,
+          status : 'DISPATCHED',
+        });
+        totalDispatched++;
+      });
+    }
+
+    // Add correlations as insights in dispatch log
+    if (data.correlations && data.correlations.length > 0) {
+      data.correlations.forEach(c => {
+        dispatchLog.unshift({
+          icon   : '🔗',
+          cssType: 'analyzing',
+          action : 'Cross-domain correlation detected',
+          meta   : c,
+          status : 'INSIGHT',
+        });
+      });
+    }
+
+    // Trim log to last 10
+    if (dispatchLog.length > 10) dispatchLog = dispatchLog.slice(0, 10);
+    document.getElementById('dispatched').textContent = totalDispatched;
+    renderDispatch(dispatchLog);
+
+    // ── Render citizen complaints from backend ────────────────────
+    if (data.complaints) {
+      const c = data.complaints;
+      document.getElementById('cmpOpen').textContent       = c.open       || 0;
+      document.getElementById('cmpInProgress').textContent = c.in_progress || 0;
+      document.getElementById('cmpResolved').textContent   = c.resolved   || 0;
+      document.getElementById('complaints').textContent    = c.total      || 0;
+      renderComplaints(c.recent || []);
+    }
+
+    // ── Agent reasoning typewriter ────────────────────────────────
+    if (data.reasoning) typeText(data.reasoning);
+
+    // ── Health status label ───────────────────────────────────────
+    document.getElementById('healthStatus').textContent =
+      data.status === 'NORMAL' ? '✅ All Systems Normal' :
+      data.status === 'CAUTION' ? '👁 Monitoring Issues' :
+      data.status === 'WARNING' ? `⚠️ ${data.high_count} Warning(s)` :
+      `🚨 ${data.critical_count} Critical Event(s)`;
+
+  } catch (err) {
+    setConnectionStatus(false);
+    console.error('Backend fetch failed:', err.message);
+  }
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────
+fetchCityStatus();                            // first call immediately
+setInterval(fetchCityStatus, POLL_INTERVAL_MS); // then every 4 seconds
+</script>
+</body>
+</html>

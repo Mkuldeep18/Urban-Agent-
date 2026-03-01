@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UIAMA — Report an Issue</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --bg: #f0f4f8;
+    --white: #ffffff;
+    --border: #dde3ea;
+    --text: #1a2535;
+    --muted: #7a8fa6;
+    --blue: #0066ff;
+    --green: #00b86b;
+    --orange: #f57c00;
+    --red: #e53935;
+    --yellow: #f9a825;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--blue);
+    padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { display:flex; align-items:center; gap:12px; }
+  .logo-icon { width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px; }
+  .logo-text { font-size:16px;font-weight:700;color:white; }
+  .logo-sub  { font-size:11px;color:rgba(255,255,255,0.7); }
+  .header-link { font-size:12px;color:rgba(255,255,255,0.8);text-decoration:none;border:1px solid rgba(255,255,255,0.3);padding:6px 14px;border-radius:6px;transition:all 0.2s; }
+  .header-link:hover { background:rgba(255,255,255,0.15); color:white; }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #0055dd 0%, #0066ff 100%);
+    padding: 40px 28px 36px;
+    text-align: center;
+    color: white;
+  }
+  .hero h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .hero p  { font-size: 14px; color: rgba(255,255,255,0.8); max-width: 480px; margin: 0 auto; }
+
+  /* ── MAIN LAYOUT ── */
+  .page { max-width: 760px; margin: 0 auto; padding: 32px 20px; }
+
+  /* ── CATEGORY PICKER ── */
+  .section-label { font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px; }
+
+  .cat-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:24px; }
+
+  .cat-btn {
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .cat-btn:hover { border-color: var(--blue); background:#f0f5ff; }
+  .cat-btn.selected { border-color: var(--blue); background:#e8f0ff; }
+  .cat-btn.selected .cat-label { color: var(--blue); font-weight: 600; }
+
+  .cat-icon  { font-size: 24px; display:block; margin-bottom:6px; }
+  .cat-label { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+  /* ── FORM CARD ── */
+  .card { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:28px; margin-bottom:20px; }
+  .card-title { font-size:15px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px; }
+
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+  .form-group:last-child { margin-bottom:0; }
+
+  label { font-size:12px; font-weight:600; color:var(--text); }
+  .optional { color:var(--muted); font-weight:400; }
+
+  input, select, textarea {
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 10px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0,102,255,0.12);
+  }
+
+  input.error, select.error, textarea.error {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(229,57,53,0.1);
+  }
+
+  .error-msg { font-size:11px; color:var(--red); margin-top:3px; display:none; }
+  .error-msg.show { display:block; }
+
+  textarea { resize:vertical; min-height:100px; }
+
+  /* ── SEVERITY ── */
+  .sev-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+
+  .sev-btn {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--white);
+  }
+
+  .sev-btn .sev-dot { width:10px;height:10px;border-radius:50%;margin:0 auto 5px; }
+  .sev-btn .sev-label { font-size:11px; font-weight:600; color:var(--muted); }
+
+  .sev-btn[data-sev="low"]      .sev-dot { background:#00b86b; }
+  .sev-btn[data-sev="medium"]   .sev-dot { background:#f9a825; }
+  .sev-btn[data-sev="high"]     .sev-dot { background:#f57c00; }
+  .sev-btn[data-sev="critical"] .sev-dot { background:#e53935; }
+
+  .sev-btn[data-sev="low"].selected      { border-color:#00b86b; background:#e8faf3; }
+  .sev-btn[data-sev="medium"].selected   { border-color:#f9a825; background:#fffde7; }
+  .sev-btn[data-sev="high"].selected     { border-color:#f57c00; background:#fff3e0; }
+  .sev-btn[data-sev="critical"].selected { border-color:#e53935; background:#ffebee; }
+
+  .sev-btn.selected .sev-label { color: var(--text); }
+
+  /* ── CHAR COUNT ── */
+  .char-count { font-family:var(--mono); font-size:10px; color:var(--muted); text-align:right; }
+
+  /* ── SUBMIT BUTTON ── */
+  .submit-btn {
+    width:100%; padding:14px;
+    background: var(--blue); color:white;
+    border:none; border-radius:10px;
+    font-family:var(--sans); font-size:14px; font-weight:700;
+    cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .submit-btn:hover:not(:disabled) { background:#0052cc; transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,102,255,0.3); }
+  .submit-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+  /* ── SUCCESS STATE ── */
+  .success-card {
+    display:none;
+    background: var(--white);
+    border: 2px solid var(--green);
+    border-radius: 14px;
+    padding: 40px 28px;
+    text-align: center;
+  }
+  .success-card.show { display:block; }
+  .success-icon { font-size:48px; margin-bottom:16px; }
+  .success-title { font-size:20px; font-weight:700; color:var(--green); margin-bottom:8px; }
+  .success-sub   { font-size:13px; color:var(--muted); margin-bottom:20px; }
+  .complaint-id  { font-family:var(--mono); font-size:16px; font-weight:700; color:var(--blue); background:#e8f0ff; padding:10px 20px; border-radius:8px; display:inline-block; margin-bottom:20px; }
+
+  .new-complaint-btn {
+    padding:10px 24px; background:var(--blue); color:white;
+    border:none; border-radius:8px; font-size:13px; font-weight:600;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .new-complaint-btn:hover { background:#0052cc; }
+
+  /* ── ERROR TOAST ── */
+  .toast {
+    position:fixed; bottom:24px; right:24px;
+    background:#1a2535; color:white; padding:14px 20px;
+    border-radius:10px; font-size:13px;
+    transform:translateY(80px); opacity:0;
+    transition:all 0.3s; z-index:999;
+    max-width:320px; border-left:4px solid var(--red);
+  }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast.success-toast { border-left-color: var(--green); }
+
+  /* ── INFO BOX ── */
+  .info-box {
+    background:#e8f0ff; border:1px solid #c5d8ff;
+    border-radius:10px; padding:14px 16px;
+    font-size:12px; color:#0052cc; margin-bottom:24px;
+    display:flex; gap:10px; align-items:flex-start;
+  }
+
+  @media(max-width:540px) {
+    .form-row   { grid-template-columns:1fr; }
+    .cat-grid   { grid-template-columns:repeat(3,1fr); }
+    .sev-grid   { grid-template-columns:repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏙️</div>
+    <div>
+      <div class="logo-text">City Monitor</div>
+      <div class="logo-sub">Citizen Complaint Portal</div>
+    </div>
+  </div>
+  <a href="urban-monitor-v2.html" class="header-link">📊 View Dashboard →</a>
+</header>
+
+<div class="hero">
+  <h1>🚨 Report a City Issue</h1>
+  <p>Help us keep your city running. Your complaint goes directly to our AI monitoring system and is reviewed immediately.</p>
+</div>
+
+<div class="page">
+
+  <!-- INFO BOX -->
+  <div class="info-box">
+    ℹ️
+    <div>Your complaint is sent directly to the <strong>UIAMA monitoring dashboard</strong>. The AI agent will correlate it with live sensor data and prioritise dispatch accordingly. Average response time: <strong>under 30 minutes</strong> for critical issues.</div>
+  </div>
+
+  <!-- FORM -->
+  <div id="complaintForm">
+
+    <!-- STEP 1: CATEGORY -->
+    <div class="card">
+      <div class="card-title">📋 What type of issue are you reporting?</div>
+      <div class="cat-grid">
+        <div class="cat-btn" data-cat="water"   onclick="selectCat(this)"><span class="cat-icon">💧</span><span class="cat-label">Water</span></div>
+        <div class="cat-btn" data-cat="power"   onclick="selectCat(this)"><span class="cat-icon">⚡</span><span class="cat-label">Power</span></div>
+        <div class="cat-btn" data-cat="garbage" onclick="selectCat(this)"><span class="cat-icon">🗑️</span><span class="cat-label">Garbage</span></div>
+        <div class="cat-btn" data-cat="road"    onclick="selectCat(this)"><span class="cat-icon">🛣️</span><span class="cat-label">Road</span></div>
+        <div class="cat-btn" data-cat="other"   onclick="selectCat(this)"><span class="cat-icon">📢</span><span class="cat-label">Other</span></div>
+      </div>
+      <div class="error-msg" id="catError">Please select an issue category.</div>
+    </div>
+
+    <!-- STEP 2: SEVERITY -->
+    <div class="card">
+      <div class="card-title">🔴 How severe is the issue?</div>
+      <div class="sev-grid">
+        <div class="sev-btn" data-sev="low"      onclick="selectSev(this)"><div class="sev-dot"></div><div class="sev-label">Low</div><div style="font-size:10px;color:var(--muted);margin-top:3px">Minor inconvenience</div></div>
+        <div class="sev-btn" data-sev="medium"   onclick="selectSev(this)"><div class="sev-dot"></div><div class="sev-label">Medium</div><div style="font-size:10px;color:var(--muted);margin-top:3px">Affecting daily life</div></div>
+        <div class="sev-btn" data-sev="high"     onclick="selectSev(this)"><div class="sev-dot"></div><div class="sev-label">High</div><div style="font-size:10px;color:var(--muted);margin-top:3px">Urgent attention needed</div></div>
+        <div class="sev-btn" data-sev="critical" onclick="selectSev(this)"><div class="sev-dot"></div><div class="sev-label">Critical</div><div style="font-size:10px;color:var(--muted);margin-top:3px">Safety risk / emergency</div></div>
+      </div>
+      <div class="error-msg" id="sevError">Please select a severity level.</div>
+    </div>
+
+    <!-- STEP 3: DETAILS -->
+    <div class="card">
+      <div class="card-title">📝 Issue Details</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="nameField">Your Name</label>
+          <input type="text" id="nameField" placeholder="e.g. Ravi Kumar" maxlength="80">
+          <div class="error-msg" id="nameError">Please enter your name (at least 2 characters).</div>
+        </div>
+        <div class="form-group">
+          <label for="phoneField">Phone Number <span class="optional">(optional)</span></label>
+          <input type="tel" id="phoneField" placeholder="e.g. +91-9876543210" maxlength="20">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="districtField">District</label>
+          <select id="districtField">
+            <option value="">— Select your district —</option>
+            <option value="District-1">District 1 (Residential)</option>
+            <option value="District-2">District 2 (Commercial)</option>
+            <option value="District-3">District 3 (Industrial)</option>
+            <option value="District-4">District 4 (Residential — Old)</option>
+            <option value="District-5">District 5 (Mixed Use)</option>
+            <option value="District-6">District 6 (Industrial)</option>
+          </select>
+          <div class="error-msg" id="districtError">Please select your district.</div>
+        </div>
+        <div class="form-group">
+          <label for="locationField">Exact Location / Landmark</label>
+          <input type="text" id="locationField" placeholder="e.g. Near Bus Stop 12, Elm Street" maxlength="200">
+          <div class="error-msg" id="locationError">Please describe the location.</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="descField">Describe the Problem</label>
+        <textarea id="descField" placeholder="Please describe what you see, hear, or smell. The more detail you provide, the faster we can respond." maxlength="500" oninput="updateCharCount()"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <div class="error-msg" id="descError" style="margin:0">Please describe the issue (at least 10 characters).</div>
+          <div class="char-count" id="charCount">0 / 500</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <button class="submit-btn" id="submitBtn" onclick="submitComplaint()">
+      🚨 Submit Complaint to City Monitor
+    </button>
+
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div class="success-card" id="successCard">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Complaint Submitted!</div>
+    <div class="success-sub">Your complaint has been received and forwarded to the UIAMA monitoring system. The AI agent is now correlating your report with live sensor data.</div>
+    <div class="complaint-id" id="complaintId">ID: ——</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Save this ID to track your complaint status.</div>
+    <button class="new-complaint-btn" onclick="resetForm()">+ Report Another Issue</button>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+
+let selectedCat = '';
+let selectedSev = '';
+
+// ── Category selection ──────────────────────────────────────────────
+function selectCat(el) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCat = el.dataset.cat;
+  document.getElementById('catError').classList.remove('show');
+}
+
+// ── Severity selection ──────────────────────────────────────────────
+function selectSev(el) {
+  document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedSev = el.dataset.sev;
+  document.getElementById('sevError').classList.remove('show');
+}
+
+// ── Char count ──────────────────────────────────────────────────────
+function updateCharCount() {
+  const len = document.getElementById('descField').value.length;
+  document.getElementById('charCount').textContent = `${len} / 500`;
+}
+
+// ── Toast ───────────────────────────────────────────────────────────
+function showToast(msg, success=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (success ? ' success-toast' : '') + ' show';
+  setTimeout(() => t.className = 'toast' + (success ? ' success-toast' : ''), 3500);
+}
+
+// ── Validation helpers ──────────────────────────────────────────────
+function setError(fieldId, errId, condition) {
+  const el  = document.getElementById(fieldId);
+  const err = document.getElementById(errId);
+  if (condition) {
+    el.classList.add('error');
+    err.classList.add('show');
+    return true;
+  }
+  el.classList.remove('error');
+  err.classList.remove('show');
+  return false;
+}
+
+// ── SUBMIT ──────────────────────────────────────────────────────────
+async function submitComplaint() {
+  // Validate all fields
+  let hasError = false;
+
+  if (!selectedCat) {
+    document.getElementById('catError').classList.add('show');
+    hasError = true;
+  }
+  if (!selectedSev) {
+    document.getElementById('sevError').classList.add('show');
+    hasError = true;
+  }
+
+  const name     = document.getElementById('nameField').value.trim();
+  const phone    = document.getElementById('phoneField').value.trim();
+  const district = document.getElementById('districtField').value;
+  const location = document.getElementById('locationField').value.trim();
+  const desc     = document.getElementById('descField').value.trim();
+
+  if (setError('nameField',     'nameError',     name.length < 2))     hasError = true;
+  if (setError('districtField', 'districtError', !district))           hasError = true;
+  if (setError('locationField', 'locationError', location.length < 3)) hasError = true;
+  if (setError('descField',     'descError',     desc.length < 10))    hasError = true;
+
+  if (hasError) {
+    showToast('Please fill in all required fields.');
+    return;
+  }
+
+  // Disable button and show loading
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Submitting...';
+
+  try {
+    const res = await fetch(`${API}/complaints`, {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({
+        name, phone: phone || null, district,
+        category: selectedCat, severity: selectedSev,
+        description: desc, location,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Submission failed');
+    }
+
+    const data = await res.json();
+
+    // Show success state
+    document.getElementById('complaintForm').style.display = 'none';
+    document.getElementById('successCard').classList.add('show');
+    document.getElementById('complaintId').textContent = `Complaint ID: ${data.complaint_id}`;
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = '🚨 Submit Complaint to City Monitor';
+
+    if (err.message.includes('fetch')) {
+      showToast('⚠ Cannot reach backend. Make sure the server is running at localhost:8000');
+    } else {
+      showToast(`Error: ${err.message}`);
+    }
+  }
+}
+
+// ── Reset form ──────────────────────────────────────────────────────
+function resetForm() {
+  selectedCat = ''; selectedSev = '';
+  document.querySelectorAll('.cat-btn, .sev-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('nameField').value     = '';
+  document.getElementById('phoneField').value    = '';
+  document.getElementById('districtField').value = '';
+  document.getElementById('locationField').value = '';
+  document.getElementById('descField').value     = '';
+  document.getElementById('charCount').textContent = '0 / 500';
+  document.getElementById('complaintForm').style.display = 'block';
+  document.getElementById('successCard').classList.remove('show');
+  document.getElementById('submitBtn').disabled  = false;
+  document.getElementById('submitBtn').innerHTML = '🚨 Submit Complaint to City Monitor';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
